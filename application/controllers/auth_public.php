@@ -1,0 +1,276 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
+class Auth_public extends CI_Controller {
+ 
+    function __construct() 
+    {
+        parent::__construct();
+
+		// To load the CI benchmark and memory usage profiler - set 1==1.
+		if (1==2) 
+		{
+			$sections = array(
+				'benchmarks' => TRUE, 'memory_usage' => TRUE, 
+				'config' => FALSE, 'controller_info' => FALSE, 'get' => FALSE, 'post' => FALSE, 'queries' => FALSE, 
+				'uri_string' => FALSE, 'http_headers' => FALSE, 'session_data' => FALSE
+			); 
+			$this->output->set_profiler_sections($sections);
+			$this->output->enable_profiler(TRUE);
+		}
+		
+		// Load required CI libraries and helpers.
+		$this->load->database();
+		$this->load->library('session');
+ 		$this->load->helper('url');
+ 		$this->load->helper('form');
+                $this->load->helper('download');
+                $this->load->helper('path');
+                $this->load->helper('file');
+                $this->load->helper('dompdf');
+                
+  		// IMPORTANT! This global must be defined BEFORE the flexi auth library is loaded! 
+ 		// It is used as a global that is accessible via both models and both libraries, without it, flexi auth will not work.
+		$this->auth = new stdClass;
+
+		// Load 'standard' flexi auth library by default.
+		$this->load->library('flexi_auth');	
+
+		// Check user is logged in via either password or 'Remember me'.
+		// Note: Allow access to logged out users that are attempting to validate a change of their email address via the 'update_email' page/method.
+		if (! $this->flexi_auth->is_logged_in() && $this->uri->segment(2) != 'update_email')
+		{
+			// Set a custom error message.
+			$this->flexi_auth->set_error_message('You must login to access this area.', TRUE);
+			$this->session->set_flashdata('message', $this->flexi_auth->get_messages());
+			redirect('auth');
+		}
+		
+		// Note: This is only included to create base urls for purposes of this application "COLABORADORES" only and are not necessarily considered as 'Best practice'.
+		$this->load->vars('base_url', 'http://localhost/spanishon.com/colaboradores/');
+		$this->load->vars('includes_dir', 'http://localhost/spanishon.com/colaboradores/includes/');
+		$this->load->vars('current_url', $this->uri->uri_to_assoc(1));
+		
+		// Define a global variable to store data that is then used by the end view page.
+		$this->data = null;
+	}
+
+	###++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++###	
+	// flexi auth demo
+	###++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++###	
+
+	/**
+	 * Many of the functions within this controller load a custom model called 'colab_auth_model' that has been created for the purposes of this application "COLABORADORES".
+	 * The 'colab_auth_model' file is not part of the flexi auth library, it is included to demonstrate how some of the functions of flexi auth can be used.
+	 *
+	 * These demos show working examples of how to implement some (most) of the functions available from the flexi auth library.
+	 * This particular controller 'auth_public', is used by users who have logged in and now wish to manage their account settings
+	 * 
+	 * All demos are to be used as exactly that, a demonstation of what the library can do.
+	 * In a few cases, some of the examples may not be considered as 'Best practice' at implementing some features in a live environment.
+	*/
+	
+	###++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++###	
+	// Dashboard
+	###++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++###	
+
+	/**
+	 * index
+	 * Forwards to the public dashboard.
+	 */ 
+	function index()
+	{
+		redirect('auth_public/dashboard');
+	}
+ 
+ 	/**
+ 	 * dashboard (Public)
+ 	 * The public account dashboard page that acts as the landing page for newly logged in public users.
+ 	 * The dashboard provides links to some examples of the features available from the flexi auth library.  
+ 	 */
+	function dashboard()
+	{
+		// Get any status message that may have been set.
+		$this->data['message'] = $this->session->flashdata('message');
+		$this->data['titulo'] = 'Admin Dashboard';
+                       
+		//$this->load->view('colab/public/dashboard_view', $this->data);
+                 redirect('auth_public/update_account');
+	}
+
+	###++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++###	
+	// Public Account Management
+	###++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++###	
+
+ 	/**
+ 	 * update_account
+ 	 * Manage and update the account details of a logged in public user.
+ 	 */
+	function update_account()
+	{
+		// If 'Update Account' form has been submitted, update the user account details.
+		if ($this->input->post('update_account')) 
+		{
+			$this->load->model('colab_auth_model');
+			$this->colab_auth_model->update_account();
+		}
+
+		// Get users current data.
+		// This example does so via 'get_user_by_identity()', however, 'get_users()' using any other unqiue identifying column and value could also be used.
+		$this->data['user'] = $this->flexi_auth->get_user_by_identity_row_array();
+
+		// Set any returned status/error messages.
+		$this->data['message'] = (! isset($this->data['message'])) ? $this->session->flashdata('message') : $this->data['message'];		
+                
+                $this->data['titulo'] = "Actualice su registro de colaborador";
+		$this->load->view('colab/public/account_update_view', $this->data);
+	}
+
+ 	/**
+ 	 * change_password
+ 	 * Manually update the logged in public users password, by submitting the current and new password.
+ 	 * This example requires that the length of the password must be between 8 and 20 characters, containing only alpha-numerics plus the following 
+ 	 * characters: periods (.), commas (,), hyphens (-), underscores (_) and spaces ( ). These customisable validation settings are defined via the auth config file.
+ 	 */
+	function change_password()
+	{
+		// If 'Actualizar Contrase&ntilde;a' form has been submitted, validate and then update the users password.
+		if ($this->input->post('change_password'))
+		{
+			$this->load->model('colab_auth_model');
+			$this->colab_auth_model->change_password();
+		}
+				
+                /**
+                 * @author Mariano Salinas <alsdk69@gmail.com>
+                 * Passing user array in order to get things working correctly in view
+                 */
+                 $this->data['user'] = $this->flexi_auth->get_user_by_identity_row_array();
+                 // FIN
+                 // Set any returned status/error messages.
+		$this->data['message'] = (! isset($this->data['message'])) ? $this->session->flashdata('message') : $this->data['message'];
+		$this->data['titulo'] = "Actualizar Contrase&ntilde;a";
+                
+		$this->load->view('colab/public/password_update_view', $this->data);
+	}
+
+ 	/**
+ 	 * update_email
+ 	 * Update the current logged in users email address via sending a verification email.
+ 	 * This example with send a verification email to the users newly entered email address, once they click a link within that email, their account will be
+ 	 * updated with the new email address. 
+ 	 * The purpose of verification via email ensures that a user enters their correct email address. If they were to unknowingly mispell the address, the next time
+ 	 * they tried to login to site, their email address would no longer be recognised, and they would then be completely locked out of their account.
+ 	 */
+	function update_email($user_id = FALSE, $token = FALSE)
+	{
+		$this->load->model('colab_auth_model');
+
+		// If 'Update Email' form has been submitted, send a verification email to the submitted email address.
+		if ($this->input->post('update_email'))
+		{
+			$this->colab_auth_model->send_new_email_activation();
+		}
+		// Else if page has been accessed via a link set in the verification email, then validate the activation token and update the email address.
+		else if (is_numeric($user_id) && strlen($token) == 40) // 40 characters = Email Activation Token length.
+		{
+			$this->colab_auth_model->verify_updated_email($user_id, $token);
+		}
+
+		// In this application , the 'update_email' page is the only page in this controller that can be accessed without needing to be logged in.
+		// This is because, some users may validate their change of email address at a later time, or from a different device that they are not logged in on.
+		// Therefore, check that the user is logged in before granting them access to the 'update_email' page.
+		if ($this->flexi_auth->is_logged_in())
+		{
+                        /**
+                         * @author Mariano Salinas <alsdk69@gmail.com>
+                         * Passing user array in order to get things working correctly in view
+                         */
+                        $this->data['user'] = $this->flexi_auth->get_user_by_identity_row_array();
+                        // FIN
+                        // Set any returned status/error messages.
+			$this->data['message'] = (! isset($this->data['message'])) ? $this->session->flashdata('message') : $this->data['message'];
+			$this->data['titulo'] = 'Actualizar E-mail';
+			$this->load->view('colab/public/email_update_view', $this->data);
+		}
+		else
+		{
+			redirect('auth/login');
+		}
+	}
+        
+        /**
+         * @author Mariano Salinas <alsdk69@gmail.com>
+         * Show a summary of collaborators' courses and with info about associated students in a table
+         */
+        function view_courses() {
+                // Create a new array for storing information about collaborator's courses
+                $this->data['table_courses'] = null;
+                // Get user current data and set page title
+                $this->data['user'] = $this->flexi_auth->get_user_by_identity_row_array();
+                $this->data['titulo'] = 'Planning de los cursos y clientes';
+                
+                $this->load->model('courses_model');
+                
+                if ($this->flexi_auth->is_logged_in()) {
+                    // Get courses only for this collaborator ID
+                    $this->courses_model->get_courses_colab($this->data['user']['upro_asoc_id']);
+                      
+                    // Load view
+                    $this->load->view('colab/public/courses_view.php', $this->data);
+            }
+        }
+        
+        /**
+         * @author Mariano Salinas <alsdk69@gmail.com>
+         * Download collaborator's leaflets in differents languages
+         * pantalla de eleccion de idioma del folleto
+         */
+	function get_leaflet() {
+            // Set title and get collaborator data from db
+            $this->data['titulo'] = "Descarga de Folletos";
+            $this->data['user'] = $this->flexi_auth->get_user_by_identity_row_array();
+            // Array to store in which language user wants to download leaflet 
+            $this->data['idiomas_folletos'] = array(
+                'es' => 'Espa&ntilde;ol',
+                'en' => 'Ingles',
+                //'frances' => 'Frances',
+                //'italiano' => 'Italiano',
+                'ru' => 'Ruso'
+                //'aleman' => 'Aleman'
+            );
+            
+            if ($this->input->post()) {
+                    $img = HTTP_LEAFLET_PATH . "folleto-spanishon-" . strtolower($this->input->post('language')) . ".jpg";
+		//			$img = HTTP_LEAFLET_PATH . "folleto-spanishon-" . $this->input->post('language') . ".jpg";
+
+                    // Download leaflet in selected language once user submit the form
+                    if ($this->input->post('get_leaflet')) {
+                        $this->download_leaflet($this->data['user']['upro_asoc_id'], $img);
+                    }
+            } // End - if ($this->input->post())
+            else {
+                // Set any returned status/error messages.
+                $this->data['message'] = (!isset($this->data['message'])) ? $this->session->flashdata('message') : $this->data['message'];
+                $this->load->view('colab/public/colab_leaflet_view', $this->data);
+            }
+        }
+        
+        /**
+         *  GENERAR EL PDF personalizado con el codigo de descuento DINAMICAMENTE PARA SU DESCARGA 
+         * en el idioma elegido por pantalla
+         * 
+         * @param type $upro_asoc_id
+         * @param type $img
+         */
+        function download_leaflet($upro_asoc_id, $img) {
+            $this->data['leaflet_img_path'] = $img;
+            $this->data['leaflet_asoc_id'] = $upro_asoc_id;
+            
+            //$this->load->view('colab/public/colab_process_pdf_view', $this->data);
+            
+            pdf_create($this->load->view('colab/public/colab_process_pdf_view', $this->data, true), 'fichero');
+        }
+}
+	
+/* End of file auth_public.php */
+/* Location: ./application/controllers/auth_public.php */	

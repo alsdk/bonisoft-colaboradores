@@ -1,0 +1,298 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
+class courses_model extends CI_Model {
+	
+    // The following method prevents an error occurring when $this->data is modified.
+    // Error Message: 'Indirect modification of overloaded property Demo_cart_admin_model::$data has no effect'.
+    public function &__get($key)
+    {
+            $CI =& get_instance();
+            return $CI->$key;
+    }
+    
+    /**
+     * Obtiene el email de un colaborador a partir de su condigo de comision/dto
+     * 
+     * @param type $upro_asoc_id
+     * @return type
+     */
+    function get_email_collaborator($upro_asoc_id) {
+        $sql = "SELECT ua.`uacc_email` email
+            FROM `user_accounts` ua
+            LEFT JOIN `collaborators_user_profiles` up ON ua.`uacc_id` = up.`upro_id`
+            WHERE up.`upro_asoc_id` = '" . $upro_asoc_id . "'";
+        $query = $this->db->query($sql);
+        
+        if ($query->num_rows() > 0)
+        {
+            $row = $query->row_array();
+
+            return $row['email'];
+        }
+    }
+
+    ###++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++###	
+    // COURSES 
+    ###++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++###	
+
+    /**
+     * get_course data for a given course_list_id
+     * 
+     * @param int(11) $course_id
+     * @return type
+     */
+    function get_course($course_id) {
+        $query_cursos = "SELECT course.* 
+                         FROM collaborators_course_list course
+                         WHERE course.course_list_id = " . $course_id;
+        $array_course = $this->db->query($query_cursos);
+        return $array_course;
+    }
+	
+	###++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++###	
+	// CREATING NEW COURSES
+	###++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++###	
+
+	/**
+	 * Insert a new course 
+         * 
+	 * Then if defined course_upro_asoc_id, automatically send an email
+         * to the corresponding collaborator.
+	 */
+	function insert_course() {
+            // Get user login details from input.
+            //$course_date = $this->input->post('update_course_date_year')."-".$this->input->post('update_course_date_month')."-".$this->input->post('update_course_date_day');
+            $course_date = $this->input->post('update_course_dates_inicio');
+            $course_students_id = $this->input->post('update_course_students_id');
+            $course_upro_asoc_id = $this->input->post('update_upro_asoc_id');
+			// INSERT INTO `jomhvvkj_wrdp1`.`collaborators_course_list` (`course_date` , `course_upro_asoc_id` , `course_students_id`) VALUES ('2014-03-04', '22', 'AFU312')	
+            $sql = "INSERT INTO `jomhvvkj_wrdp1`.`collaborators_course_list` 
+                    (`course_date` , `course_upro_asoc_id`, `course_students_id`)
+                    VALUES 
+                    ('" . $course_date . "', '" . $course_upro_asoc_id . "', '" . $course_students_id . "')";
+//            print_r($this->input->post());
+//            print_r($sql);
+//            die();
+            $response = $this->db->query($sql);
+
+            if ($response) {
+				//  $email_colaborador = array('identity' => $email);
+				//$this->flexi_auth->send_email($email, 'Welcome', 'registration_welcome.tpl.php', $email_data);
+                // Note: The 'registration_welcome.tpl.php' template file is located in the '../views/includes/email/' directory defined by the config file.
+
+                ###+++++++++++++++++###
+
+                // Save any public status or error messages (Whilst suppressing any admin messages) to CI's flash session data.
+                $this->session->set_flashdata('message', $this->flexi_auth->get_messages());
+                
+                //$this->CI->flexi_auth_model->set_status_message('insert / update_successful');
+                
+	
+                // Redirect course edition 
+                //redirect('courses_controller');
+                return TRUE;
+            }
+            return FALSE;
+	}
+        
+        /**
+         * Unique ID given to each collaborator that allow to track all his courses, students and so on 
+         * @param type $coupon_id OPTIONAL when setted it will only shows courses for a given collaborator
+         * instead of all courses for all collaborators.
+         * 
+         * retrieve all collaborator's courses and students with their start date presented in table rows
+         */
+        function get_courses_colab($coupon_id = null) {
+            
+            /* ORIGINAL QUE FUNCIONA
+                      $query_cursos = "SELECT c.course_upro_asoc_id,
+                                       c.course_date,
+                                       GROUP_CONCAT(c.course_students_id SEPARATOR ',') AS alumnos,
+                                       COUNT(c.course_students_id) AS suma
+                                       FROM collaborators_course_list AS c
+                                       INNER JOIN collaborators_user_profiles AS p ON c.course_upro_asoc_id = p.upro_asoc_id 
+                                       WHERE p.upro_asoc_id = '" . $coupon_id . "'
+                                       GROUP BY c.course_upro_asoc_id, c.course_date";
+                      $array_courses = $this->db->query($query_cursos);
+
+                      foreach ($array_courses->result() as $row) {
+                          if (!empty($row->course_date)) {
+                            $this->data['table_courses'] .= "<tr>
+                                                    <th>" . $row->course_date . "</th>
+                                                    <th>" . $row->alumnos . "</th>
+                                                    <th>" . $row->suma . "</th>
+                                                   </tr>";
+                          }
+                      }
+                      return;
+             */
+
+            /*
+             * consulta implicada:
+             * "SELECT c.course_upro_asoc_id,
+             *                         c.course_date,
+             *                         GROUP_CONCAT(c.course_students_id SEPARATOR ',') AS alumnos,
+             *                         COUNT(c.course_students_id) AS suma
+             *                         FROM collaborators_course_list AS c
+             *                         INNER JOIN collaborators_user_profiles AS p ON c.course_upro_asoc_id = p.upro_asoc_id 
+             *                         WHERE p.upro_asoc_id = '" . $coupon_id . "'
+             *                         GROUP BY c.course_upro_asoc_id, c.course_date"
+             */
+            // @todo code clean (two foreach, etc)
+             $query_cursos = "SELECT c.course_upro_asoc_id,
+                              c.course_date,
+                              GROUP_CONCAT(c.course_students_id SEPARATOR ',') AS alumnos,
+                              COUNT(c.course_students_id) AS suma
+                              FROM collaborators_course_list AS c
+                              INNER JOIN collaborators_user_profiles AS p ON c.course_upro_asoc_id = p.upro_asoc_id ";
+                      
+              // Filter by collaborator ID and get only courses belonging to him
+              if (isset($coupon_id)) {
+                  $query_cursos .= "WHERE p.upro_asoc_id = '" . $coupon_id . "'
+                                    GROUP BY c.course_upro_asoc_id, c.course_date";
+                  
+                 // Do the query
+                 $array_courses = $this->db->query($query_cursos);
+              
+                 // Print results in table rows
+                 foreach ($array_courses->result() as $row) {
+                   if (!empty($row->course_date)) {
+                        $this->data['table_courses'] .= "<tr>
+                            <td>" . $row->course_date . "</td>
+                            <td>" . $row->alumnos . "</td>
+                            <td>" . $row->suma . "</td>
+                            </tr>";
+                    }
+                 }
+              }
+              // Otherwise we get all courses from all collaborators
+              else {
+                  $query_cursos .= "GROUP BY c.course_upro_asoc_id, c.course_date";
+                  
+                                   // Do the query
+                 $array_courses = $this->db->query($query_cursos);
+              
+                 // Print results in table rows
+                 foreach ($array_courses->result() as $row) {
+                   if (!empty($row->course_date)) {
+                        $this->data['table_courses'] .= "<tr>
+                            <td>" . $row->course_upro_asoc_id . "</td>
+                            <td>" . $row->course_date . "</td>
+                            <td>" . $row->alumnos . "</td>
+                            <td>" . $row->suma . "</td>
+                            </tr>";
+                    }
+                 }
+              }
+              
+              return;
+         }
+         
+        function check_exist_course_collab($course_date, $course_students_id, $course_upro_asoc_id) {
+            
+            $sql = "SELECT * 
+                    FROM  `jomhvvkj_wrdp1`.`collaborators_course_list`
+                    WHERE course_date = '" . $course_date . "' AND course_upro_asoc_id = '" . $course_upro_asoc_id . "' "
+                     . " AND course_students_id ='" . $course_students_id . "'";
+
+            //print_r($sql);
+            //die();
+            $response = $this->db->query($sql);
+            
+            if ($response->num_rows() > 0) {$existe = 1;}
+            else {$existe = 0;}
+            
+            return $existe;
+
+	}
+        
+      /**
+      * Obtiene un curso de la tabla collaborators_course_dates dado un course_dates_id
+      * 
+      * @author Antonio Rosado
+      * @param type $course_id
+      * @return type
+      */
+     //function get_collaborators_course($course_id = NULL) {
+     function get_course_dates($course_id = NULL) {
+         
+        $query_cursos = "SELECT * FROM collaborators_course_dates";
+        
+        // Do the query
+        $array_course = $this->db->query($query_cursos);
+
+         // Print results in table rows
+         foreach ($array_course->result() as $row) {
+           if (!empty($row->course_dates_id)) {
+                $this->data['table_courses'] .= "<tr>
+                    <td>" . $row->course_dates_id . "</td>
+                    <td>" . $row->course_dates_inicio . "</td>
+                    
+                    <td>" . $row->course_dates_descripcion . "</td>
+                    </tr>";
+            }
+         }
+        return $array_course;
+     }
+     
+     
+      /**
+      * Obtiene un curso de la tabla collaborators_course_dates dado un course_dates_id
+      * 
+      * @author Antonio Rosado
+      * @todo. rehacer
+      */        
+        function insert_course_dates() {
+            // Get user login details from input.
+            //$course_dates_inicio = $this->input->post('update_course_dates_inicio');
+            $course_dates_inicio = $this->input->post('update_course_date_year')."-".$this->input->post('update_course_date_month')."-".$this->input->post('update_course_date_day');
+            $course_dates_fin = ""; //no usado por ahora pero introducimos un espacio
+            $course_dates_descripcion = $this->input->post('update_course_dates_descripcion');
+            
+            $sql = "INSERT INTO `jomhvvkj_wrdp1`.`collaborators_course_dates` 
+                    (`course_dates_inicio` , `course_dates_fin`, `course_dates_descripcion`)
+                    VALUES 
+                    ('" . $course_dates_inicio . "',   '" . $course_dates_fin . "', '" . $course_dates_descripcion . "')";
+            
+            $response = $this->db->query($sql);
+
+            if ($response) {
+				//  $email_colaborador = array('identity' => $email);
+				//$this->flexi_auth->send_email($email, 'Welcome', 'registration_welcome.tpl.php', $email_data);
+                // Note: The 'registration_welcome.tpl.php' template file is located in the '../views/includes/email/' directory defined by the config file.
+
+              //  ###+++++++++++++++++###
+
+                // Save any public status or error messages (Whilst suppressing any admin messages) to CI's flash session data.
+                $this->session->set_flashdata('message', $this->flexi_auth->get_messages());
+                
+                //$this->CI->flexi_auth_model->set_status_message('insert / update_successful');
+                
+	
+                // Redirect course edition 
+                //redirect('courses_controller');
+                return TRUE;
+            }
+            return FALSE;
+	}
+        
+        function check_exist_course_dates($course_dates_inicio, $course_dates_descripcion) {
+            
+            $sql = "SELECT * 
+                    FROM  `jomhvvkj_wrdp1`.`collaborators_course_dates`
+                    WHERE course_dates_inicio = '" . $course_dates_inicio . "' AND course_dates_descripcion ='" . $course_dates_descripcion . "'";
+
+            //print_r($sql);
+            //die();
+            $response = $this->db->query($sql);
+            
+            if ($response->num_rows() > 0) {$existe = 1;}
+            else {$existe = 0;}
+            
+            return $existe;
+	}
+        
+        
+}
+/* End of file colab_auth_model.php */
+/* Location: ./application/models/colab_auth_model.php */

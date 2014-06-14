@@ -1,0 +1,28 @@
+<html>
+<body>
+Estimado/a Sr/Sra. <?php echo $name; ?> <p></p>
+En primer lugar queremos darle las gracias por su inter&eacute;s en pasar a formar parte de la red de colaboradores de nuestra empresa. Estamos seguros de que nuestro programa de inmersi&oacute;n ling眉铆stica 鈥淪panish On鈥?  es el complemento perfecto para todos aquellos estudiantes de espa帽ol que tienen ya unos conocimientos gramaticales b&aacute;sicos pero que necesitan  mejorar sus habilidades a la hora de comunicarse en espa帽ol.<p></p>
+Su c&oacute;digo de colaborador es el <b><?php echo $asoc_id; ?></b> <p></p>
+El uso de este c&oacute;digo por parte de sus alumnos para la inscripci&oacute;n online en cualquiera de nuestros  cursos  les supondr谩 un descuento a estos  de <b><?php echo $descuento; ?></b>� en el precio del curso correspondiente.<p></p>
+A su vez por cada alumno que se inscriba a nuestros cursos utilizando ese c贸digo descuento y haga el pago correspondiente usted recibir谩 una comisi&oacute;n como colaborador de <h5><?php echo $comision; ?></b>� <p></p>
+Puede hacer el seguimiento de uso de su &oacute;digo en el  panel de gesti贸n que le hemos habilitado para tal fin. Adem谩s le mantendremos informado v铆a email sobre la actividad generada con su c&oacute;digo.<p></p>
+Tiene a su disposici贸n en el panel de gesti&oacute;n folletos de promoci&oacute;n de nuestros cursos (personalizado con su c&oacute;digo de colaborador) en varios idiomas.<p></p>
+Una vez llegada la fecha de dicho curso usted podr谩 emitirnos el correspondiente recibo/factura para que podamos proceder al abono de la/s correspondiente/s comisi&oacute;n/es.<p></p>
+Le reiteramos nuestro agradecimiento  por formar parte de nuestra red de colaboradores y le invitamos  a que le de la m谩xima difusi&oacute;n posible a nuestro programa de inmersi贸n ling眉铆stica 鈥淪panish On鈥?.<p></p>
+Si tiene cualquier duda o necesita de alguna aclaraci贸n no dude en ponerse en contacto con nosotros.<p></p>
+Reciba un cordial saludo<p></p>
+<p></p>
+
+<footer>
+    <img href="http://spanishon.com/wp-content/uploads/2014/02/pie-email.jpg">
+    Por favor, tenga en cuenta el medio ambiente antes de imprimir este correo. Muchas gracias.
+
+AVISO LEGAL: Este mensaje est谩 dirigido 煤nicamente a su destinatario. Contiene informaci贸n CONFIDENCIAL sometida a secreto profesional o cuya divulgaci贸n est谩 prohibida por la ley LOPD 15/1999 de 13 de Diciembre. Si ha recibido este mensaje por error, debe saber que su lectura, copia y uso no est谩n autorizados. Le rogamos que nos lo comunique inmediatamente por esta misma v铆a y proceda a su destrucci贸n. El correo electr贸nico v铆a Internet no permite asegurar la confidencialidad de los mensajes que se transmiten ni su integridad o correcta recepci贸n. Spanish On S.L.U. no asume responsabilidad por estas circunstancias y se reserva el derecho a ejercer las acciones legales que le correspondan contra todo tercero que acceda de forma ileg铆tima al contenido de este mensaje y al de los ficheros contenidos en el mismo. Si el destinatario de este mensaje no consintiera la utilizaci贸n del correo electr贸nico v铆a Internet y la grabaci贸n de los mensajes, rogamos lo ponga en nuestro conocimiento de forma inmediata a trav茅s de mensaje al correo electr贸nico info@spanishon.com.
+
+LEGAL NOTICE: This message is only intended for the addressee. It contains CONFIDENTIAL information protected by professional secrecy. Dissemination of such information is prohibited by international laws. If you have received this message by mistake, please be aware that you are not authorised to read, copy or use it. Please notify us immediately via this means and destroy it. E-mail over the Internet does not allow to ensure the confidentiality, integrity or correct reception of the messages that are sent. Spanish On S.L.U.  does not accept liability for these circumstances and reserves the right to take the legal measures to which it is entitled against any third party that unlawfully accesses the content of this message and the files attached here to. If the addressee of this message does not consent to the use of e-mail via the Internet and to messages being saved, please notify us on an immediate basis sending an email to info@spanishon.com.
+Spanish On S.L.U. como empresa organizadora de los Programas de Inmersi贸n Ling眉铆stica 鈥淪panish On鈥? con B 92.975.382 Domicilio Social y Fiscal en Avenida Carlos Haya 5, 1潞 D, 29.010 M谩laga, garantiza que la direcci贸n de e-mail que usted nos ha facilitado es utilizada en la forma y con las limitaciones establecidas en la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Informaci贸n y Comercio Electr贸nico (LSSICE).
+</footer>
+    
+</body>
+</html>
+

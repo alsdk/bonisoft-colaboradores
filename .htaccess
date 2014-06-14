@@ -1,0 +1,19 @@
+RewriteEngine on
+# RewriteBase /flexi_auth
+# Example
+# If the 'base_url' defined via the config file was $config['base_url'] = 'http://localhost/your_codeigniter_directory/'
+# Then the '.htaccess' file should be updated to RewriteBase /your_codeigniter_directory/. 
+RewriteBase /~alsdk/bonisoft/spanishon.com/colaboradores/
+
+# Prevent CI index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule .* index.php/$0 [PT,L] 
+
+# Prevent user access to the CI system folder.
+RewriteCond %{REQUEST_URI} ^system.*
+RewriteRule ^(.*)$ /index.php?/$1 [L] 
+
+# Prevent user access to the CI application folder
+RewriteCond %{REQUEST_URI} ^application.*
+RewriteRule ^(.*)$ /index.php?/$1 [L]
